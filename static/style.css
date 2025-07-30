@@ -1,0 +1,255 @@
+/* Genel Sayfa Stilleri */
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background-color: #f4f7f6;
+    color: #333;
+    transition: background-color 0.3s, color 0.3s;
+    margin: 0;
+    padding: 20px;
+}
+
+/* Karanlık Mod */
+body.dark {
+    background-color: #1a1a2e;
+    color: #e0e0e0;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 15px;
+}
+
+/* Başlık Bölümü */
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+header h1 {
+    color: #16213e;
+    font-size: 2em;
+    margin: 0;
+}
+
+body.dark header h1 {
+    color: #e94560;
+}
+
+/* Buton Stilleri */
+.toggle-btn, .action-btn {
+    padding: 10px 15px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1em;
+    transition: background-color 0.2s, transform 0.2s;
+    margin-left: 10px;
+}
+
+.toggle-btn {
+    background-color: #e94560;
+    color: white;
+}
+
+.action-btn {
+    background-color: #0f3460;
+    color: white;
+}
+
+.toggle-btn:hover, .action-btn:hover {
+    transform: translateY(-2px);
+}
+
+body.dark .toggle-btn {
+    background-color: #e94560;
+}
+
+body.dark .action-btn {
+    background-color: #1f4068;
+}
+
+/* Kart Stili */
+.card {
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+body.dark .card {
+    background-color: #1f2847;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+}
+
+.card-header {
+    background-color: #0f3460;
+    color: white;
+    padding: 15px;
+    font-size: 1.2em;
+    font-weight: bold;
+}
+
+body.dark .card-header {
+    background-color: #e94560;
+}
+
+.card-content {
+    padding: 15px;
+    overflow-x: auto;
+}
+
+/* Tablo Stilleri */
+.sensor-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.sensor-table th, .sensor-table td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+body.dark .sensor-table th, body.dark .sensor-table td {
+    border-bottom: 1px solid #333d51;
+}
+
+.sensor-table th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+}
+
+body.dark .sensor-table th {
+    background-color: #2a3352;
+}
+
+/* Soluklaşarak gelme animasyonu */
+.fade-in {
+    animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.thumbnail-image {
+    width: 100px;
+    height: auto;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.thumbnail-image:hover {
+    transform: scale(1.1);
+}
+
+/* Alt Bilgi */
+footer {
+    text-align: center;
+    margin-top: 30px;
+    color: #888;
+}
+
+body.dark footer {
+    color: #6c757d;
+}
+
+/* Modal (Pop-up Pencere) Stilleri */
+.modal {
+    display: block;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.5);
+    animation: fadeIn 0.3s;
+}
+
+.modal-content {
+    background: #fff;
+    margin: 2% auto;            /* Daha yukarıda başlasın */
+    padding: 30px 20px 20px 20px;
+    border-radius: 10px;
+    width: 90%;
+    max-width: 400px;
+    max-height: 90vh;           /* Ekranın %90’ını geçmesin */
+    overflow-y: auto;           /* İçerik taşarsa scroll görünsün */
+    position: relative;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+    animation: fadeIn 0.3s;
+}
+
+body.dark .modal-content {
+    background-color: #1f2847;
+    border-color: #555;
+}
+
+.close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.close:hover,
+.close:focus {
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+body.dark .close:hover,
+body.dark .close:focus {
+    color: #e0e0e0;
+}
+
+.modal-image {
+    width: 100%;
+    height: auto;
+    margin-bottom: 15px;
+}
+
+/* Modal Form Stilleri */
+#indexForm, #addDeviceForm {
+    display: flex;
+    flex-direction: column;
+}
+
+#indexForm label, #addDeviceForm label {
+    margin-top: 10px;
+    margin-bottom: 5px;
+}
+
+#indexForm input, #addDeviceForm input {
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+body.dark #indexForm input, body.dark #addDeviceForm input {
+    background-color: #333d51;
+    border-color: #555;
+    color: #e0e0e0;
+}
+
+#indexForm button, #addDeviceForm button {
+    margin-top: 15px;
+    padding: 10px;
+    background-color: #0f3460;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+body.dark #indexForm button, body.dark #addDeviceForm button {
+    background-color: #e94560;
+}

@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    .gallery-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      justify-content: flex-start;
+    }
+
+    .gallery-item {
+      width: 300px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      padding: 10px;
+      box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .gallery-item img {
+      width: 100%;
+      border-radius: 4px;
+    }
+
+    .gallery-item p {
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+<div style="display: flex; justify-content: flex-end; margin: 20px;">
+  <a href="{{ url_for('main.index') }}">
+    <button style="padding: 10px 20px; background-color: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer;">
+      ⬅ Anasayfa
+    </button>
+  </a>
+</div>
+
+  <h2>Fotoğraf Galerisi</h2>
+                <button class="action-btn" onclick="window.location.href='http://10.10.11.41:5001/';">Anasayfa</button>
+
+
+  <div class="gallery-container">
+
+    {% for img in images %}
+      <div class="gallery-item">
+
+        <img src="{{ url_for('static', filename='images/' + img.filename) }}" alt="Image {{ img.id }}">
+            <p>Manuel value: {{ img.manual_value if img.manual_value else "Tanımsız" }}</p>
+            <p><strong>Cam device:</strong>
+            {%  if img.cam_device_id == "0C8B95D22640" %}
+                Mali Kamera
+                <p> </p>
+                <p>Cam device id : 0C8B95D22640</p>
+            {% endif %}
+            {%  if img.cam_device_id == "0C8B95CF195C" %}
+                Emir Kamera
+                <p> </p>
+                <p>Cam device id : 0C8B95CF195C</p>
+            {% endif %}
+            </p>
+      </div>
+    {% endfor %}
+  </div>
+
+
+
+</body>
+</html>

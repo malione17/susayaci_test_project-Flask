@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerçek Zamanlı WebSocket Dashboard</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            transition: all 0.3s ease;
+        }
+
+        body.dark {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        body.dark header {
+            background: rgba(52, 73, 94, 0.95);
+            color: white;
+        }
+
+        header h1 {
+            color: #2c3e50;
+            font-size: 2.2em;
+            font-weight: 600;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        body.dark header h1 {
+            color: white;
+            -webkit-text-fill-color: white;
+        }
+
+        .header-buttons {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .action-btn, .toggle-btn {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .action-btn:hover, .toggle-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .toggle-btn {
+            background: linear-gradient(45deg, #feca57, #ff9f43);
+        }
+
+        .toggle-btn:hover {
+            box-shadow: 0 6px 20px rgba(254, 202, 87, 0.4);
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            overflow: hidden;
+            margin-bottom: 25px;
+        }
+
+        body.dark .card {
+            background: rgba(52, 73, 94, 0.95);
+            color: white;
+        }
+
+        .card-header {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            padding: 20px 25px;
+            font-size: 1.3em;
+            font-weight: 600;
+        }
+
+        .card-content {
+            padding: 0;
+        }
+
+        .sensor-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        .sensor-table th {
+            background: rgba(102, 126, 234, 0.1);
+            color: #2c3e50;
+            padding: 15px 12px;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 2px solid rgba(102, 126, 234, 0.2);
+        }
+
+        body.dark .sensor-table th {
+            background: rgba(52, 73, 94, 0.5);
+            color: white;
+        }
+
+        .sensor-table td {
+            padding: 12px;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+            vertical-align: middle;
+        }
+
+        body.dark .sensor-table td {
+            border-bottom-color: rgba(255,255,255,0.1);
+        }
+
+        .sensor-table tr:hover {
+            background: rgba(102, 126, 234, 0.05);
+        }
+
+        body.dark .sensor-table tr:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .thumbnail-image {
+            width: 60px;
+            height: 45px;
+            object-fit: cover;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .thumbnail-image:hover {
+            transform: scale(1.1);
+            border-color: #667eea;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(5px);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: white;
+            margin: 2% auto;
+            padding: 25px;
+            border-radius: 15px;
+            width: 95%;
+            max-width: 700px;
+            max-height: 95vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            animation: modalSlideIn 0.3s ease;
+            position: relative;
+        }
+
+        body.dark .modal-content {
+            background: #34495e;
+            color: white;
+        }
+
+        @keyframes modalSlideIn {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .close {
+            position: absolute;
+            right: 20px;
+            top: 20px;
+            color: #aaa;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+            z-index: 1001;
+        }
+
+        .close:hover {
+            background: rgba(102, 126, 234, 0.1);
+            color: #667eea;
+        }
+
+        /* Yeni: Resim + Form kombinasyonu için özel stiller */
+        .image-form-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .modal-image {
+            width: 100%;
+            max-width: 500px;
+            height: auto;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            margin-bottom: 20px;
+        }
+
+        .image-info {
+            background: rgba(102, 126, 234, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            width: 100%;
+            max-width: 500px;
+        }
+
+        body.dark .image-info {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .index-form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            width: 100%;
+            max-width: 500px;
+        }
+
+        .index-form label {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+
+        body.dark .index-form label {
+            color: white;
+        }
+
+        .index-form input {
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        body.dark .index-form input {
+            background: #2c3e50;
+            border-color: #34495e;
+            color: white;
+        }
+
+        .index-form input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .index-form button {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+
+        .index-form button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .modal form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .modal label {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+
+        body.dark .modal label {
+            color: white;
+        }
+
+        .modal input {
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        body.dark .modal input {
+            background: #2c3e50;
+            border-color: #34495e;
+            color: white;
+        }
+
+        .modal input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .modal button {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+
+        .modal button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        footer {
+            text-align: center;
+            padding: 25px;
+            color: rgba(255, 255, 255, 0.8);
+            font-weight: 500;
+            margin-top: 20px;
+        }
+
+        .nav-link {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            z-index: 100;
+        }
+
+        .nav-link:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+
+            header {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            header h1 {
+                font-size: 1.8em;
+            }
+
+            .sensor-table {
+                font-size: 12px;
+            }
+
+            .sensor-table td, .sensor-table th {
+                padding: 8px 6px;
+            }
+
+            .thumbnail-image {
+                width: 40px;
+                height: 30px;
+            }
+
+            .modal-content {
+                margin: 5% auto;
+                padding: 20px;
+                width: 98%;
+            }
+
+            .image-form-container {
+                flex-direction: column;
+            }
+
+            .modal-image {
+                max-width: 100%;
+            }
+        }
+
+        /* Status indicators */
+        .status-online {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            background: #10b981;
+            border-radius: 50%;
+            margin-right: 8px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <a href="/devices" class="nav-link">Cihaz Yönetimi →</a>
+
+    <div class="container">
+        <header>
+            <h1><span class="status-online"></span>Gerçek Zamanlı MQTT Verisi</h1>
+            <div class="header-buttons">
+                <button class="action-btn" onclick="openAddDeviceModal()">+ Cihaz Ekle</button>
+                <button class="action-btn" onclick="window.location.href='http://10.10.11.41:5001/gallery';">📷 Resimler</button>
+                <button class="toggle-btn" onclick="toggleDarkMode()">🌙 Tema Değiştir</button>
+            </div>
+        </header>
+
+        <div class="card">
+            <div class="card-header">
+                📊 Veri Tablosu - Canlı Güncelleme
+            </div>
+            <div class="card-content">
+                <table class="sensor-table" id="sensorTable">
+                    <thead>
+                        <tr>
+                            <th>ID (Frame Counter)</th>
+                            <th>Tarih/Saat</th>
+                            <th>Device ID</th>
+                            <th>Probe ID</th>
+                            <th>Manual Value</th>
+                            <th>Remote Value</th>
+                            <th>📷 Görsel</th>
+                        </tr>
+                    </thead>
+                    <tbody id="data-table-body"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <footer>
+            <strong>Developed by Controlix - 2025</strong> |
+            <span id="connectionStatus">Bağlantı durumu kontrol ediliyor...</span>
+        </footer>
+    </div>
+
+    <script>
+        let wsConnected = false;
+
+        // Tabloya satır ekleyen yardımcı fonksiyon
+        function addRowToTable(tableBody, item, prepend = true) {
+            console.log("Gelen satır:", item);
+            const row = document.createElement("tr");
+            row.classList.add("fade-in");
+
+
+            let imageCellHtml = '<span style="color: #94a3b8;">src</span>';
+            if (item.image_path) {
+                let imageUrl = item.image_path;
+
+                // Eğer sadece dosya adı varsa (örneğin: "esp32cam_20250703_085245.jpg")
+                if (!imageUrl.startsWith('/')) {
+                    imageUrl = '/static/images/' + imageUrl;
+                }
+
+                // Tam URL oluştur
+                imageUrl = 'http://10.10.11.41:5001' + imageUrl;
+
+                // YENİ: Resim modalını açarken tüm veri parametrelerini geçir
+                imageCellHtml = `
+                    <img
+                        src="${imageUrl}"
+                        alt="Cihaz Görüntüsü"
+                        class="thumbnail-image"
+                        onclick="openImageWithIndexModal('${imageUrl}', '${item.device_id}', '${item.probe_id || ''}', '${item.fcnt || item.id || ''}', '${item.id || ''}')"
+                        onerror="this.style.display='none'; this.nextSibling.style.display='inline'"
+                    />
+                    <span style="display:none; color: #ef4444;">❌ Yüklenemedi</span>`;
+            }
+
+            // Tüm satırın HTML içeriğini oluştur
+            row.innerHTML = `
+                <td><strong>${item.fcnt || item.id || 'N/A'}</strong></td>
+                <td>${formatDateTime(item.timestamp)}</td>
+                <td><code>${item.device_id}</code></td>
+                <td>${item.probe_id || '-'}</td>
+                <td>${item.manual_value || '-'}</td>
+                <td>${item.remote_value || '-'}</td>
+                <td>${imageCellHtml}</td>
+            `;
+
+            if (prepend) {
+                tableBody.prepend(row);
+                // Maksimum 100 satır tutarak performansı koruyalım
+                while (tableBody.children.length > 100) {
+                    tableBody.removeChild(tableBody.lastChild);
+                }
+            } else {
+                tableBody.appendChild(row);
+            }
+        }
+
+        // Tarih formatı
+        function formatDateTime(timestamp) {
+            if (!timestamp) return 'N/A';
+            const date = new Date(timestamp);
+            return date.toLocaleString('tr-TR');
+        }
+
+        // WebSocket bağlantısını HTTPS/HTTP durumuna göre güvenli bir şekilde kur
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const ws = new WebSocket(`${protocol}//10.10.11.41:5001/ws`);
+        ws.onopen = function() {
+            console.log('WebSocket bağlantısı başarılı');
+            wsConnected = true;
+            updateConnectionStatus('Canlı bağlantı aktif', 'success');
+        };
+
+        ws.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+            const table = document.getElementById("data-table-body");
+            addRowToTable(table, data, true);
+        };
+
+        ws.onerror = function(error) {
+            console.error('WebSocket hatası:', error);
+            wsConnected = false;
+            updateConnectionStatus('Bağlantı hatası', 'error');
+        };
+
+        ws.onclose = function() {
+            console.log('WebSocket bağlantısı kapandı');
+            wsConnected = false;
+            updateConnectionStatus('Bağlantı kesildi - 5 saniye sonra yeniden denenecek', 'warning');
+
+            setTimeout(function() {
+                location.reload();
+            }, 5000);
+        };
+
+        // Bağlantı durumu güncelleme
+        function updateConnectionStatus(message, type) {
+            const statusEl = document.getElementById('connectionStatus');
+            statusEl.textContent = message;
+            statusEl.style.color = type === 'success' ? '#10b981' :
+                                  type === 'error' ? '#ef4444' : '#f59e0b';
+        }
+
+        // Sayfa ilk yüklendiğinde son verileri sunucudan çek
+        fetch('/last_data')
+            .then(response => response.json())
+            .then(data => {
+                const table = document.getElementById("data-table-body");
+                const items = data.data || [];
+                items.forEach(item => {
+                    addRowToTable(table, item, false);
+                });
+
+                if (items.length === 0) {
+                    table.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px; color: #94a3b8;">Henüz veri bulunmuyor</td></tr>';
+                }
+            })
+            .catch(error => {
+                console.error('Veri yükleme hatası:', error);
+                updateConnectionStatus('Veri yükleme hatası', 'error');
+            });
+
+        // YENİ: Resim + Index formu kombinasyonu modalı
+        function openImageWithIndexModal(imageUrl, device_id, probe_id, fcnt, record_id) {
+            if (document.querySelector("#imageIndexModal")) return;
+
+            const modal = document.createElement("div");
+            modal.id = "imageIndexModal";
+            modal.classList.add("modal");
+
+            modal.innerHTML = `
+                <div class="modal-content">
+                    <span class="close" onclick="closeModal('imageIndexModal')">&times;</span>
+                    <div class="image-form-container">
+                        <img src="${imageUrl}" alt="Cihaz Görüntüsü" class="modal-image">
+
+                        <div class="image-info">
+                            <strong>Record ID:</strong> ${record_id}<br>
+                            <strong>Device ID:</strong> ${device_id}<br>
+                            <strong>Probe ID:</strong> ${probe_id || 'N/A'}<br>
+                            <strong>Frame Counter:</strong> ${fcnt || 'N/A'}
+                        </div>
+
+                        <form class="index-form" id="imageIndexForm">
+                            <input type="hidden" name="record_id" value="${record_id}">
+                            <input type="hidden" name="device_id" value="${device_id}">
+                            <input type="hidden" name="probe_id" value="${probe_id}">
+                            <input type="hidden" name="fcnt" value="${fcnt}">
+
+                            <label for="manual_value">📝 Index Değeri:</label>
+                            <input type="number" id="manual_value" name="manual_value"
+                                   placeholder="Index değerini girin..." required />
+
+                            <button type="submit">💾 Kaydet</button>
+                        </form>
+                    </div>
+                </div>
+            `;
+
+            document.body.appendChild(modal);
+            modal.style.display = "flex";
+
+            // Form gönderildiğinde çalışacak kod
+            document.getElementById("imageIndexForm").onsubmit = function(event) {
+                event.preventDefault();
+                const formData = new FormData(event.target);
+                const data = Object.fromEntries(formData.entries());
+
+                fetch('/set_manual_value', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                })
+                .then(res => res.json())
+                .then(result => {
+                    if (result.status === 'success') {
+                        alert("✅ Index başarıyla kaydedildi!");
+                        closeModal('imageIndexModal');
+                        // Tablodaki veriyi güncelle
+                        window.location.reload();
+                    } else {
+                        alert("❌ Hata: " + (result.message || 'Bilinmeyen hata'));
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('❌ Bir hata oluştu: ' + error.message);
+                });
+            };
+        }
+
+        // "Cihaz Ekle" butonuna tıklandığında açılan pencere
+        function openAddDeviceModal() {
+            if (document.querySelector("#addDeviceModal")) return;
+
+            const modal = document.createElement("div");
+            modal.id = "addDeviceModal";
+            modal.classList.add("modal");
+
+            modal.innerHTML = `
+                <div class="modal-content">
+                    <span class="close" onclick="closeModal('addDeviceModal')">&times;</span>
+                    <h2 style="margin-bottom: 20px; color: #2c3e50;">➕ Yeni Cihaz Ekle</h2>
+                    <form id="addDeviceForm">
+                        <label for="deveui">🔗 DevEUI:</label>
+                        <input type="text" id="deveui" name="deveui" required
+                               pattern="[a-fA-F0-9]{16}" title="16 hexadecimal karakterler"
+                               placeholder="16 haneli hex kod (örn: 1234567890ABCDEF)">
+
+                        <label for="cam_device_id">📹 Cam Device ID:</label>
+                        <input type="text" id="cam_device_id" name="cam_device_id" required
+                               placeholder="Kamera cihaz ID'si">
+
+                        <label for="probe_count">🔢 Probe Sayısı:</label>
+                        <input type="number" id="probe_count" name="probe_count"
+                               required value="1" min="1" max="10">
+
+                        <button type="submit">✅ Cihaz Ekle</button>
+                    </form>
+                </div>
+            `;
+
+            document.body.appendChild(modal);
+            modal.style.display = "flex";
+
+            // Form gönderildiğinde çalışacak kod
+            document.getElementById("addDeviceForm").onsubmit = function(event) {
+                event.preventDefault();
+                const formData = new FormData(event.target);
+
+                fetch('/devices/add', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(res => res.json())
+                .then(result => {
+                    if (result.status === "success") {
+                        alert("✅ Cihaz başarıyla eklendi!");
+                        closeModal('addDeviceModal');
+                        window.location.reload();
+                    } else {
+                        alert("❌ Hata: " + (result.message || 'Bilinmeyen hata'));
+                    }
+                })
+                .catch(err => {
+                    console.error('Error:', err);
+                    alert('❌ Bir hata oluştu: ' + err.message);
+                });
+            };
+        }
+
+        // Açık olan herhangi bir modal pencereyi kapatan genel fonksiyon
+        function closeModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                document.body.removeChild(modal);
+            }
+        }
+
+        // Tema değiştirme fonksiyonu
+        function toggleDarkMode() {
+            document.body.classList.toggle("dark");
+            const isDark = document.body.classList.contains("dark");
+            localStorage.setItem('darkMode', isDark);
+        }
+
+        // Sayfa yüklendiğinde tema ayarını uygula
+        document.addEventListener('DOMContentLoaded', function() {
+            const isDark = localStorage.getItem('darkMode') === 'true';
+            if (isDark) {
+                document.body.classList.add('dark');
+            }
+        });
+
+        // Modal dışına tıklama ile kapatma
+        window.onclick = function(event) {
+            if (event.target.classList.contains('modal')) {
+                const modalId = event.target.id;
+                closeModal(modalId);
+            }
+        }
+
+        // Klavye kısayolları
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                const modal = document.querySelector('.modal[style*="flex"]');
+                if (modal) {
+                    closeModal(modal.id);
+                }
+            }
+        });
+    </script>
+</body>
+</html>

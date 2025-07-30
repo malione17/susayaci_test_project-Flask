@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Gerçek Zamanlı WebSocket Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Gerçek Zamanlı MQTT Verisi Test (WebSocket)</h1>
+            <button class="toggle-btn" onclick="toggleDarkMode()">🌙 Tema Değiştir</button>
+        </header>
+
+        <div class="card">
+            <div class="card-header">Veri Tablosu</div>
+            <div class="card-content">
+                <table class="sensor-table" id="sensorTable">
+                    <thead>
+                        <tr>
+                            <th>ID (Frame Counter)</th>
+                            <th>Tarih/Saat</th>
+                            <th>Device ID</th>
+                            <th>Probe ID</th>
+                            <th>manual_value</th>
+                            <th>remote_value</th>
+                            <th>Image</th>
+                        </tr>
+                    </thead>
+                    <tbody id="data-table-body"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <footer>Developed by Controlix - 2025</footer>
+    </div>
+
+    <script>
+    // WebSocket bağlantısını kuruyoruz. Bu kısım aynı.
+    const ws = new WebSocket(`ws://${location.host}/ws`);
+
+    // Sunucudan canlı bir mesaj geldiğinde bu fonksiyon çalışır.
+    ws.onmessage = function(event) {
+        const data = JSON.parse(event.data);
+        const table = document.getElementById("data-table-body");
+        const row = document.createElement("tr");
+        row.classList.add("fade-in");
+
+        // Tablo satırını gelen veriyle dolduruyoruz.
+        // Dikkat: Fotoğraf hücresindeki değişiklik en önemlisi.
+        row.innerHTML = `
+            <td>${data.fcnt || 'N/A'}</td>
+            <td>${data.timestamp}</td>
+            <td>${data.device_id}</td>
+            <td>${data.probe_id || ''}</td>
+            <td>${data.manual_value || ''}</td>
+            <td>${data.remote_value || ''}</td>
+            <td>
+                ${data.image_path ? // Eğer 'image_path' verisi varsa...
+                    // Fotoğrafı yeni sekmede açan bir link (<a>) oluştur.
+                    // Bu linkin içinde küçük bir önizleme resmi (<img>) göster.
+                    `<a href="${data.image_path}" target="_blank">
+                        <img src="${data.image_path}" alt="Cihaz Görüntüsü" width="100">
+                     </a>`
+                    : // Eğer 'image_path' verisi yoksa...
+                    'Fotoğraf Yok' // "Fotoğraf Yok" metnini göster.
+                }
+            </td>
+        `;
+        table.prepend(row); // Yeni satırı tablonun en üstüne ekle.
+    };
+
+    // Sayfa ilk yüklendiğinde eski verileri çeken kısım.
+    fetch('/last_data')
+        .then(response => response.json())
+        .then(data => {
+            const table = document.getElementById("data-table-body");
+            const items = Array.isArray(data) ? data : data.data || [];
+
+            items.forEach(item => {
+                const row = document.createElement("tr");
+                row.classList.add("fade-in");
+                // Aynı mantığı buraya da uyguluyoruz.
+                row.innerHTML = `
+                    <td>${item.fcnt || 'N/A'}</td>
+                    <td>${item.timestamp}</td>
+                    <td>${item.device_id}</td>
+                    <td>${item.probe_id || ''}</td>
+                    <td>${item.manual_value || ''}</td>
+                    <td>${item.remote_value || ''}</td>
+                    <td>
+                        ${item.image_path ?
+                            `<a href="${item.image_path}" target="_blank">
+                                <img src="${item.image_path}" alt="Cihaz Görüntüsü" width="100">
+                             </a>`
+                            :
+                            'Fotoğraf Yok'
+                        }
+                    </td>
+                `;
+                table.appendChild(row); // Eski verileri tablonun sonuna ekle.
+            });
+        });
+
+    // Tema değiştirme fonksiyonu aynı kalabilir.
+    function toggleDarkMode() {
+        document.body.classList.toggle("dark");
+        // ... (bu fonksiyonun içeriği değişmedi)
+    }
+</script>
+</body>
+</html>
