@@ -534,7 +534,7 @@
                 }
 
                 // Tam URL oluştur
-                imageUrl = 'http://10.10.11.41:5001' + imageUrl;
+                imageUrl = 'http://local ip' + imageUrl;
 
                 // YENİ: Resim modalını açarken tüm veri parametrelerini geçir
                 imageCellHtml = `
@@ -579,7 +579,7 @@
 
         // WebSocket bağlantısını HTTPS/HTTP durumuna göre güvenli bir şekilde kur
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const ws = new WebSocket(`${protocol}//10.10.11.41:5001/ws`);
+        const ws = new WebSocket(`${protocol}//local ip/ws`);
         ws.onopen = function() {
             console.log('WebSocket bağlantısı başarılı');
             wsConnected = true;
